@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import SpotifyWebApi from 'spotify-web-api-js';
 
+import Playback from './Playback';
 import './App.css';
 
 const spotifyApi = new SpotifyWebApi();
@@ -17,20 +18,26 @@ class App extends Component {
 
     this.state = {
       loggedIn: token ? true : false,
-      nowPlaying: {name: 'Not Checked', albumArt: ''}
+      nowPlaying: {name: 'Not Checked', albumArt: ''},
+      token: token,
+      progress: 0
     }
+    this.nowPlayingInterval = setInterval(() => this.getNowPlaying(), 4000);
+ 
   }
 
   getNowPlaying() {
-    spotifyApi.getMyCurrentPlaybackState()
+    if (this.state.loggedIn === true){
+      spotifyApi.getMyCurrentPlaybackState()
     .then((response) => {
       this.setState({
         nowPlaying: {
         name: response.item.name,
-        albumArt: response.item.album.images[0].url
-        }
+        albumArt: response.item.album.images[0].url,
+        },
+        progress: response.progress_ms
       })
-    })
+    })}
   }
 
   getHashParams() {
@@ -55,10 +62,8 @@ class App extends Component {
         <div>
           <img src={this.state.nowPlaying.albumArt} style={{ height: 150 }} />
         </div>
-        {this.state.loggedIn && 
-        <button onClick={() => this.getNowPlaying()}>
-          Check Now Playing
-          </button>
+        {this.state.token &&
+        <Playback accessToken={this.state.token} progress={this.state.progress} />
         }
       </div>
     );
