@@ -17,6 +17,8 @@ var client_id = 'dc3064cb7a1a4e1891d518bd8227c2ab'; // Your client id
 var client_secret = 'f2e457d5b42247d3bd0bbb89b3bf1a47'; // Your secret
 var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
 
+var expiration_time;
+
 /**
  * Generates a random string containing numbers and letters
  * @param  {number} length The length of the string
@@ -46,7 +48,7 @@ app.get('/login', function(req, res) {
   res.cookie(stateKey, state);
 
   // your application requests authorization
-  var scope = 'user-read-private user-read-email user-read-playback-state streaming user-read-currently-playing app-remote-control';
+  var scope = 'user-read-private user-read-birthdate user-read-email user-read-playback-state user-modify-playback-state streaming user-read-currently-playing app-remote-control';
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
       response_type: 'code',
@@ -91,6 +93,9 @@ app.get('/callback', function(req, res) {
 
         var access_token = body.access_token,
             refresh_token = body.refresh_token;
+        expiration_time = body.expires_in;
+
+        console.log(expiration_time);
 
         var options = {
           url: 'https://api.spotify.com/v1/me',
@@ -107,7 +112,8 @@ app.get('/callback', function(req, res) {
         res.redirect('http://localhost:3000/#' +
           querystring.stringify({
             access_token: access_token,
-            refresh_token: refresh_token
+            refresh_token: refresh_token,
+            expiration_time: expiration_time
           }));
       } else {
         res.redirect('/#' +
@@ -136,9 +142,18 @@ app.get('/refresh_token', function(req, res) {
   request.post(authOptions, function(error, response, body) {
     if (!error && response.statusCode === 200) {
       var access_token = body.access_token;
-      res.send({
-        'access_token': access_token
-      });
+      expiration_time = body.expires_in;
+      console.log(expiration_time);
+
+      res.send(JSON.stringify({
+            access_token: access_token,
+            expiration_time: expiration_time
+          }));
+    } else {
+      res.send('/#' +
+        querystring.stringify({
+          error: 'invalid_token'
+        }));
     }
   });
 });

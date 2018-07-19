@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import SpotifyWebApi from 'spotify-web-api-js';
 
 import Playback from './Playback';
+import './ProgressBar.css';
 import './App.css';
 
 const spotifyApi = new SpotifyWebApi();
@@ -12,6 +13,7 @@ class App extends Component {
     super();
     const params = this.getHashParams();
     const token = params.access_token;
+    const refresh_token = params.refresh_token;
     if(token) {
       spotifyApi.setAccessToken(token);
     }
@@ -20,16 +22,38 @@ class App extends Component {
       loggedIn: token ? true : false,
       nowPlaying: {name: 'Not Checked', albumArt: ''},
       token: token,
-      progress: 0
+      refresh_token: refresh_token,
+      progress: 0,
+      expiration_time: 0
     }
+    
     this.nowPlayingInterval = setInterval(() => this.getNowPlaying(), 4000);
+    this.getNewAccessToken = this.getNewAccessToken.bind(this);
+    this.expirationTimer = setInterval(() => this.ExpirationTimer(), 9000);
  
+  }
+
+  componentDidMount(){
+    fetch('http://localhost:8888/refresh_token?refresh_token=' +  this.state.refresh_token)
+    .then(results => {
+      return results.json();
+    }).then(data => {
+      var newToken = data.access_token;
+      var expiration_time = data.expiration_time;
+      console.log(newToken);
+      this.setState({
+        token: newToken,
+        expiration_time: expiration_time
+      })
+      spotifyApi.setAccessToken(this.state.token);
+    })    
   }
 
   getNowPlaying() {
     if (this.state.loggedIn === true){
       spotifyApi.getMyCurrentPlaybackState()
     .then((response) => {
+      //console.log(response);
       this.setState({
         nowPlaying: {
         name: response.item.name,
@@ -38,6 +62,17 @@ class App extends Component {
         progress: response.progress_ms
       })
     })}
+  }
+
+  ExpirationTimer() {
+    var expiration_time = this.state.expiration_time;
+    if (expiration_time <= 60)
+    {
+      this.getNewAccessToken();
+    }else {
+      expiration_time = expiration_time - 9;
+      this.setState({ expiration_time: expiration_time })
+    }
   }
 
   getHashParams() {
@@ -52,15 +87,37 @@ class App extends Component {
     return hashParams;
   }
 
+  getNewAccessToken(e) {
+    if (e !== undefined)
+    {
+      e.preventDefault();
+
+    }
+  fetch('http://localhost:8888/refresh_token?refresh_token=' +  this.state.refresh_token)
+  .then(results => {
+    return results.json();
+  }).then(data => {
+    var newToken = data.access_token;
+    var expiration_time = data.expiration_time;
+    console.log(newToken);
+    this.setState({
+      token: newToken,
+      expiration_time: expiration_time
+    })
+    spotifyApi.setAccessToken(this.state.token);
+  })
+  
+  }
+
   render() {
     return (
       <div className="App">
-        <a href='http://localhost:8888'>Login to Spotify</a>
+        {this.state.loggedIn === false && <a href='http://localhost:8888'>Login to Spotify</a>}
         <div>
           Now Playing: {this.state.nowPlaying.name}
         </div>
         <div>
-          <img src={this.state.nowPlaying.albumArt} style={{ height: 150 }} />
+          <img src={this.state.nowPlaying.albumArt} style={{ height: 300 }} alt="album art"/>
         </div>
         {this.state.token &&
         <Playback accessToken={this.state.token} progress={this.state.progress} />
@@ -71,3 +128,5 @@ class App extends Component {
 }
 
 export default App;
+
+//debugging button for access token <button onClick={(e) => this.getNewAccessToken(e)}>Get New Access Token </button>
