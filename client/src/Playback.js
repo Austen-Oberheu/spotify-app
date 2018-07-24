@@ -48,7 +48,12 @@ class Playback extends Component {
             this.setState({ accessToken: nextProps.accessToken});
             //Updates token for playback API
             if (this.player !== undefined)
-            this.player.getOAuthToken = this.state.accessToken;
+            {
+            // this.player = window.Spotify.Player({
+            //   name: "Austen's Spotify App",
+            //   getOAuthToken: cb => { cb(nextProps.accessToken); }
+            // });
+          }
         }
         if (this.props.progress !== nextProps.progress){
             this.setState({ progress: nextProps.progress,

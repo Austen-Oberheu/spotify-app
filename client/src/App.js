@@ -34,7 +34,7 @@ class App extends Component {
   }
 
   componentDidMount(){
-    fetch('http://localhost:8888/refresh_token?refresh_token=' +  this.state.refresh_token)
+    fetch('http://192.168.3.190:8888/refresh_token?refresh_token=' +  this.state.refresh_token)
     .then(results => {
       return results.json();
     }).then(data => {
@@ -45,7 +45,7 @@ class App extends Component {
         token: newToken,
         expiration_time: expiration_time
       })
-      spotifyApi.setAccessToken(this.state.token);
+      spotifyApi.setAccessToken(newToken);
     })    
   }
 
@@ -93,7 +93,7 @@ class App extends Component {
       e.preventDefault();
 
     }
-  fetch('http://localhost:8888/refresh_token?refresh_token=' +  this.state.refresh_token)
+  fetch('http://192.168.3.190:8888/refresh_token?refresh_token=' +  this.state.refresh_token)
   .then(results => {
     return results.json();
   }).then(data => {
@@ -104,7 +104,7 @@ class App extends Component {
       token: newToken,
       expiration_time: expiration_time
     })
-    spotifyApi.setAccessToken(this.state.token);
+    spotifyApi.setAccessToken(newToken);
   })
   
   }
@@ -112,7 +112,8 @@ class App extends Component {
   render() {
     return (
       <div className="App">
-        {this.state.loggedIn === false && <a href='http://localhost:8888'>Login to Spotify</a>}
+        {this.state.loggedIn === false && <a href='http://192.168.3.190:8888'>Login to Spotify</a>}
+        <button onClick={(e) => this.getNewAccessToken(e)}>Get New Access Token </button>
         <div>
           Now Playing: {this.state.nowPlaying.name}
         </div>
